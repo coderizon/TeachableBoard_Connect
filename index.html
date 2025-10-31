@@ -29,20 +29,25 @@
     </div>
 
     <div id="main-app" class="hidden">
-        <div class="app-shell">
-            <header class="app-header">
-                <p id="status-message" aria-live="polite"></p>
-                <button id="bluetooth-button" type="button" aria-label="Bluetooth Geräte verbinden" onclick="handleBluetoothClick()">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M12.7 12l4.46-3.35a1 1 0 0 0 .09-1.54l-5.5-5.06a1 1 0 0 0-1.66.75v6.7L6.82 6.35a1 1 0 1 0-1.25 1.56L9.9 12l-4.33 4.09a1 1 0 1 0 1.25 1.56l3.27-3.05v6.7a1 1 0 0 0 1.66.75l5.5-5.06a1 1 0 0 0-.09-1.54L12.7 12zm-.61-8.55L14.9 7.2l-2.81 2.1V3.45zm0 17.1v-5.86l2.81 2.1-2.81 3.76z"/>
-                    </svg>
-                </button>
-            </header>
+        <div class="main-layout">
+            <div class="corner-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M4 7a3 3 0 0 1 3-3h1.2a1 1 0 0 0 .92-.61l.38-.9A1.5 1.5 0 0 1 10.86 2h2.28a1.5 1.5 0 0 1 1.36.49l.38.9a1 1 0 0 0 .92.61H17a3 3 0 0 1 3 3v11a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7Zm8 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0-2.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Z"></path>
+                </svg>
+            </div>
+            
+            <button id="bluetooth-button" type="button" aria-label="Bluetooth Geräte verbinden" onclick="handleBluetoothClick()">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12.7 12l4.46-3.35a1 1 0 0 0 .09-1.54l-5.5-5.06a1 1 0 0 0-1.66.75v6.7L6.82 6.35a1 1 0 1 0-1.25 1.56L9.9 12l-4.33 4.09a1 1 0 1 0 1.25 1.56l3.27-3.05v6.7a1 1 0 0 0 1.66.75l5.5-5.06a1 1 0 0 0-.09-1.54L12.7 12zm-.61-8.55L14.9 7.2l-2.81 2.1V3.45zm0 17.1v-5.86l2.81 2.1-2.81 3.76z"/>
+                </svg>
+            </button>
 
-            <main class="app-content">
+            <p id="status-message" aria-live="polite"></p>
+
+            <div class="main-stage">
                 <div id="webcam-container" class="webcam-frame"></div>
-                <div id="prediction-display" class="prediction-box hidden">—</div>
-            </main>
+                <div id="prediction-display" class="prediction-pill hidden">—</div>
+            </div>
         </div>
 
         <div id="bluetooth-popover" class="hidden" onclick="handlePopoverBackdrop(event)">

@@ -127,7 +127,9 @@ function selectCalliope() {
 function updateStatus(message) {
     const statusDiv = document.getElementById("status-message");
     if (statusDiv) {
-        statusDiv.textContent = message || "";
+        const hasMessage = Boolean(message);
+        statusDiv.textContent = hasMessage ? message : "";
+        statusDiv.classList.toggle('is-visible', hasMessage);
     }
 }
 // Führt den Übergang von der Landing Page zur Hauptanwendung durch
