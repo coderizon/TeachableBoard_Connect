@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>MakerSpace ML & Micro:bit</title>
+    <link rel="stylesheet" href="styles.css"> </head>
+<body>
+    <div id="landing-page" onclick="checkLogoClick(event)">
+        <div id="svg-background"></div> 
+        
+        <img id="makerspace-logo" src="makerspace.png" alt="Makerspace Logo starten">
+        
+        <p id="landing-message">Klicke auf das Logo, um die App zu starten</p>
+    </div>
+
+    <div id="model-url-dialog" class="hidden">
+        <div class="dialog-content">
+            <p class="dialog-title">Please paste the full Teachable Machine model URL:</p>
+            <input type="text"
+                   id="dialog-url-input"
+                   placeholder="https://teachablemachine.withgoogle.com/models/XYZ/"
+                   autocomplete="off">
+            <p id="dialog-error" class="dialog-error hidden">Bitte gib einen gültigen Link ein.</p>
+            <div class="dialog-actions">
+                <button type="button" class="dialog-button primary" onclick="confirmModelUrl()">OK</button>
+                <button type="button" class="dialog-button secondary" onclick="cancelModelUrlDialog()">Abbrechen</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-app" class="hidden">
+
+        <hr>
+        
+        <div id="webcam-container"></div>
+        <div id="label-container"></div>
+        
+        <hr>
+        
+        
+        <button type="button" onclick="connectMicrobit()">BBC micro:bit verbinden</button>
+        <button type="button" onclick="connectCalliope()">Calliope mini verbinden</button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+    
+    <script src="connection.js"></script> 
+    <script src="calliopeConnection.js"></script> 
+    <script src="script.js"></script>      
+</body>
+</html>
