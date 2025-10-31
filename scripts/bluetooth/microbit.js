@@ -18,9 +18,25 @@ async function connectMicrobit() {
     uartCharacteristic = await uartService.getCharacteristic(UART_TX_CHARACTERISTIC_UUID);
     console.log('✅ Micro:bit verbunden');
     alert('Micro:bit erfolgreich verbunden!');
+    if (typeof setBluetoothConnected === 'function') {
+      setBluetoothConnected(true);
+    }
+    microbitDevice.addEventListener('gattserverdisconnected', () => {
+      uartCharacteristic = null;
+      uartService = null;
+      microbitServer = null;
+      microbitDevice = null;
+      if (typeof setBluetoothConnected === 'function') {
+        setBluetoothConnected(false);
+      }
+      alert('Micro:bit Verbindung getrennt.');
+    });
   } catch (error) {
     console.error('❌ Fehler beim Verbinden:', error);
     alert('Verbindung fehlgeschlagen!');
+    if (typeof setBluetoothConnected === 'function') {
+      setBluetoothConnected(false);
+    }
   }
 }
 

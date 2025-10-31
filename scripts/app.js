@@ -4,6 +4,7 @@
 // =======================================================================
 let model, webcam, resultDisplay, maxPredictions; 
 let lastSentLabel = null; // Für die Micro:bit-Kommunikation (Sendefrequenz-Kontrolle)
+let isBluetoothConnected = false;
 const DEFAULT_MODEL_URL = "https://teachablemachine.withgoogle.com/models/7NtSo3_fL/";
 let currentModelUrl = DEFAULT_MODEL_URL;
 
@@ -131,6 +132,13 @@ function updateStatus(message) {
         statusDiv.textContent = hasMessage ? message : "";
         statusDiv.classList.toggle('is-visible', hasMessage);
     }
+}
+
+function setBluetoothConnected(connected) {
+    isBluetoothConnected = connected;
+    const button = document.getElementById('bluetooth-button');
+    if (!button) return;
+    button.classList.toggle('is-connected', Boolean(connected));
 }
 // Führt den Übergang von der Landing Page zur Hauptanwendung durch
 function transitionToMainApp() {

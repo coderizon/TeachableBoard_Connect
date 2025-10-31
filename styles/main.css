@@ -179,7 +179,7 @@ background-repeat: repeat;
     align-items: center;
     justify-content: center;
     min-height: 100vh;
-    padding: 40px 20px 60px;
+    padding: 120px 20px 60px;
     position: relative;
     background-color: #ffd700;
 }
@@ -195,9 +195,9 @@ background-repeat: repeat;
 }
 
 .corner-icon {
-    position: absolute;
-    top: 0;
-    left: 0;
+    position: fixed;
+    top: 24px;
+    left: 24px;
     width: 60px;
     height: 60px;
     background: #ffffff;
@@ -216,9 +216,9 @@ background-repeat: repeat;
 }
 
 #bluetooth-button {
-    position: absolute;
-    top: 0;
-    right: 0;
+    position: fixed;
+    top: 24px;
+    right: 24px;
     width: 60px;
     height: 60px;
     border: none;
@@ -237,6 +237,15 @@ background-repeat: repeat;
     width: 28px;
     height: 28px;
     fill: #1f4b99;
+}
+
+#bluetooth-button.is-connected {
+    background: #1f4b99;
+    box-shadow: 0 16px 34px rgba(31, 75, 153, 0.35);
+}
+
+#bluetooth-button.is-connected svg {
+    fill: #ffffff;
 }
 
 #bluetooth-button:hover {
@@ -311,24 +320,34 @@ background-repeat: repeat;
 
 @media (max-width: 600px) {
     #main-app {
-        padding: 24px 0 40px;
+        padding: 96px 0 40px;
     }
 
     .main-layout {
+        width: 100%;
         max-width: 100%;
-        gap: 32px;
+        gap: 28px;
     }
 
     .corner-icon,
     #bluetooth-button {
         width: 48px;
         height: 48px;
+        top: 16px;
     }
 
     .corner-icon svg,
     #bluetooth-button svg {
         width: 22px;
         height: 22px;
+    }
+
+    .corner-icon {
+        left: 16px;
+    }
+
+    #bluetooth-button {
+        right: 16px;
     }
 
     #status-message {

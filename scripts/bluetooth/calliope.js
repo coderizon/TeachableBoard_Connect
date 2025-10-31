@@ -24,6 +24,9 @@ async function connectCalliope() {
 
     console.log('✅ Calliope mini verbunden');
     alert('Calliope mini erfolgreich verbunden!');
+    if (typeof setBluetoothConnected === 'function') {
+      setBluetoothConnected(true);
+    }
 
     calliopeDevice.addEventListener('gattserverdisconnected', () => {
       console.warn('⚠️ Calliope mini Verbindung getrennt.');
@@ -31,10 +34,16 @@ async function connectCalliope() {
       calliopeUartCharacteristic = null;
       calliopeServer = null;
       calliopeDevice = null;
+      if (typeof setBluetoothConnected === 'function') {
+        setBluetoothConnected(false);
+      }
     });
   } catch (error) {
     console.error('❌ Fehler beim Verbinden mit dem Calliope mini:', error);
     alert('Calliope mini konnte nicht verbunden werden.');
+    if (typeof setBluetoothConnected === 'function') {
+      setBluetoothConnected(false);
+    }
   }
 }
 
