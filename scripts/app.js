@@ -1,6 +1,6 @@
 // =======================================================================
 // Globale Zustandsvariablen für die gesamte Anwendung
-// Diese MÜSSEN hier deklariert werden (let), um Konflikte mit connection.js zu vermeiden
+// Diese MÜSSEN hier deklariert werden (let), um Konflikte mit anderen Bluetooth-Skripten zu vermeiden
 // =======================================================================
 let model, webcam, resultDisplay, maxPredictions; 
 let lastSentLabel = null; // Für die Micro:bit-Kommunikation (Sendefrequenz-Kontrolle)

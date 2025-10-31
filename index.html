@@ -3,12 +3,12 @@
 <head>
     <meta charset="utf-8">
     <title>MakerSpace ML & Micro:bit</title>
-    <link rel="stylesheet" href="styles.css"> </head>
+    <link rel="stylesheet" href="styles/main.css"> </head>
 <body>
     <div id="landing-page" onclick="checkLogoClick(event)">
         <div id="svg-background"></div> 
         
-        <img id="makerspace-logo" src="makerspace.png" alt="Makerspace Logo starten">
+        <img id="makerspace-logo" src="assets/images/makerspace.png" alt="Makerspace Logo starten">
         
         <p id="landing-message">Klicke auf das Logo, um die App zu starten</p>
     </div>
@@ -58,8 +58,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
     
-    <script src="connection.js"></script> 
-    <script src="calliopeConnection.js"></script> 
-    <script src="script.js"></script>      
+    <script src="scripts/bluetooth/microbit.js"></script> 
+    <script src="scripts/bluetooth/calliope.js"></script> 
+    <script src="scripts/app.js"></script>      
 </body>
 </html>
