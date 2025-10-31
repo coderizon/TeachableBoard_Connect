@@ -2,7 +2,7 @@
 // Globale Zustandsvariablen für die gesamte Anwendung
 // Diese MÜSSEN hier deklariert werden (let), um Konflikte mit connection.js zu vermeiden
 // =======================================================================
-let model, webcam, labelContainer, maxPredictions; 
+let model, webcam, resultDisplay, maxPredictions; 
 let lastSentLabel = null; // Für die Micro:bit-Kommunikation (Sendefrequenz-Kontrolle)
 const DEFAULT_MODEL_URL = "https://teachablemachine.withgoogle.com/models/7NtSo3_fL/";
 let currentModelUrl = DEFAULT_MODEL_URL;
@@ -89,6 +89,47 @@ if (dialogInputElement) {
     });
 }
 
+function handleBluetoothClick() {
+    console.log('Bluetooth-Icon wurde geklickt.');
+    const popover = document.getElementById('bluetooth-popover');
+    if (popover) {
+        popover.classList.remove('hidden');
+    }
+}
+
+function closeBluetoothPopover() {
+    const popover = document.getElementById('bluetooth-popover');
+    if (popover) {
+        popover.classList.add('hidden');
+    }
+}
+
+function handlePopoverBackdrop(event) {
+    if (event.target.id === 'bluetooth-popover') {
+        closeBluetoothPopover();
+    }
+}
+
+function selectMicrobit() {
+    closeBluetoothPopover();
+    if (typeof connectMicrobit === 'function') {
+        connectMicrobit();
+    }
+}
+
+function selectCalliope() {
+    closeBluetoothPopover();
+    if (typeof connectCalliope === 'function') {
+        connectCalliope();
+    }
+}
+
+function updateStatus(message) {
+    const statusDiv = document.getElementById("status-message");
+    if (statusDiv) {
+        statusDiv.textContent = message || "";
+    }
+}
 // Führt den Übergang von der Landing Page zur Hauptanwendung durch
 function transitionToMainApp() {
     // 1. App-Zustand umschalten
@@ -110,22 +151,39 @@ function transitionToMainApp() {
 
 // Wird nach bestätigter Modell-URL (oder bei einem Neustart) aufgerufen
 async function startClassification() {
-    const statusDiv = document.getElementById("status-message");
     const userURL = currentModelUrl;
     
     if (!userURL || !userURL.startsWith("http")) {
-        statusDiv.textContent = "Fehler: Bitte geben Sie einen gültigen Link ein, der mit 'http' beginnt.";
+        updateStatus("Fehler: Bitte gib einen gültigen Link ein, der mit 'http' beginnt.");
         return;
     }
+
+    updateStatus("");
 
     // Lösche alte Webcam und Labels, falls vorhanden (wichtig bei Neustart)
     if (webcam) {
         webcam.stop();
         document.getElementById("webcam-container").innerHTML = '';
-        document.getElementById("label-container").innerHTML = '';
+        webcam = null;
     }
 
+    resultDisplay = document.getElementById("prediction-display");
+    if (resultDisplay) {
+        resultDisplay.textContent = "…";
+    }
+
+    model = null;
+    maxPredictions = 0;
+    lastSentLabel = null;
+
     await init(userURL);
+    if (!model) {
+        updateStatus("Ladefehler!");
+        if (resultDisplay) {
+            resultDisplay.textContent = "—";
+        }
+        return;
+    }
 }
 
 // Lädt das Modell und richtet die Webcam ein
@@ -140,21 +198,25 @@ async function init(modelBaseURL) {
     } catch (error) {
         console.error("Fehler beim Laden des Modells. Ist der Link korrekt freigegeben?", error);
         alert("Fehler beim Laden des Modells. Prüfen Sie den Link und die Browser-Konsole.");
-        document.getElementById("status-message").textContent = "Ladefehler!";
+        updateStatus("Ladefehler!");
         return;
     }
     
     // Richte die Webcam ein
     const flip = true; 
-    webcam = new tmImage.Webcam(200, 200, flip); 
+    webcam = new tmImage.Webcam(320, 320, flip); 
     await webcam.setup(); // Fordert Zugriff auf die Kamera an
     await webcam.play();
     
     // Fügt die Elemente zur Seite hinzu
-    document.getElementById("webcam-container").appendChild(webcam.canvas);
-    labelContainer = document.getElementById("label-container");
-    for (let i = 0; i < maxPredictions; i++) {
-        labelContainer.appendChild(document.createElement("div"));
+    const webcamContainer = document.getElementById("webcam-container");
+    webcamContainer.innerHTML = '';
+    webcamContainer.appendChild(webcam.canvas);
+
+    resultDisplay = document.getElementById("prediction-display");
+    if (resultDisplay) {
+        resultDisplay.classList.remove('hidden');
+        resultDisplay.textContent = "…";
     }
     
     // Startet die Klassifizierungsschleife
@@ -187,17 +249,15 @@ async function predict() {
 
     for (let i = 0; i < maxPredictions; i++) {
         const p = prediction[i];
-        
-        // 1. Anzeige aktualisieren
-        const classPrediction =
-            p.className + ": " + p.probability.toFixed(2); 
-        labelContainer.childNodes[i].innerHTML = classPrediction;
 
-        // 2. Höchste Wahrscheinlichkeit prüfen
         if (p.probability > highestProbability) {
             highestProbability = p.probability;
             currentLabel = p.className;
         }
+    }
+    
+    if (resultDisplay) {
+        resultDisplay.textContent = currentLabel || "—";
     }
     
     // Senden nur bei Label-Wechsel
