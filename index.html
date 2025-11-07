@@ -31,11 +31,11 @@
 
     <div id="main-app" class="hidden">
         <div class="main-layout">
-            <div class="corner-icon" aria-hidden="true">
+            <button id="camera-toggle" class="corner-icon" type="button" aria-label="Kamera wechseln" onclick="toggleCamera()">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M4 7a3 3 0 0 1 3-3h1.2a1 1 0 0 0 .92-.61l.38-.9A1.5 1.5 0 0 1 10.86 2h2.28a1.5 1.5 0 0 1 1.36.49l.38.9a1 1 0 0 0 .92.61H17a3 3 0 0 1 3 3v11a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7Zm8 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0-2.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Z"></path>
                 </svg>
-            </div>
+            </button>
             
             <button id="bluetooth-button" type="button" aria-label="Bluetooth Geräte verbinden" onclick="handleBluetoothClick()">
                 <svg viewBox="0 0 24 24" aria-hidden="true">

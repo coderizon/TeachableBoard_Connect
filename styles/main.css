@@ -207,12 +207,39 @@ background-repeat: repeat;
     align-items: center;
     box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
     z-index: 2;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
 .corner-icon svg {
     width: 28px;
     height: 28px;
     fill: #1f4b99;
+}
+
+.corner-icon:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 30px rgba(0, 0, 0, 0.22);
+}
+
+.corner-icon:active {
+    transform: translateY(0);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.18);
+}
+
+.corner-icon:focus-visible {
+    outline: 3px solid rgba(31, 75, 153, 0.35);
+    outline-offset: 4px;
+}
+
+.corner-icon.is-back-camera {
+    background: #1f4b99;
+    box-shadow: 0 16px 34px rgba(31, 75, 153, 0.35);
+}
+
+.corner-icon.is-back-camera svg {
+    fill: #ffffff;
 }
 
 #bluetooth-button {

@@ -7,6 +7,8 @@ let lastSentLabel = null; // Für die Micro:bit-Kommunikation (Sendefrequenz-Kon
 let isBluetoothConnected = false;
 const DEFAULT_MODEL_URL = "https://teachablemachine.withgoogle.com/models/7NtSo3_fL/";
 let currentModelUrl = DEFAULT_MODEL_URL;
+let currentFacingMode = "user"; // 'user' = Selfie-Kamera, 'environment' = Rückkamera
+let isCameraSwitchInProgress = false;
 
 const APP_STATES = {
     LANDING: 0,
@@ -140,6 +142,16 @@ function setBluetoothConnected(connected) {
     if (!button) return;
     button.classList.toggle('is-connected', Boolean(connected));
 }
+
+function updateCameraToggleButton() {
+    const button = document.getElementById('camera-toggle');
+    if (!button) return;
+    const isFrontCamera = currentFacingMode !== 'environment';
+    const label = isFrontCamera ? "Auf Rückkamera wechseln" : "Auf Selfiekamera wechseln";
+    button.setAttribute('aria-label', label);
+    button.setAttribute('title', label);
+    button.classList.toggle('is-back-camera', !isFrontCamera);
+}
 // Führt den Übergang von der Landing Page zur Hauptanwendung durch
 function transitionToMainApp() {
     // 1. App-Zustand umschalten
@@ -176,6 +188,8 @@ async function startClassification() {
         document.getElementById("webcam-container").innerHTML = '';
         webcam = null;
     }
+    currentFacingMode = "user";
+    updateCameraToggleButton();
 
     resultDisplay = document.getElementById("prediction-display");
     if (resultDisplay) {
@@ -212,16 +226,14 @@ async function init(modelBaseURL) {
         return;
     }
     
-    // Richte die Webcam ein
-    const flip = true; 
-    webcam = new tmImage.Webcam(320, 320, flip); 
-    await webcam.setup(); // Fordert Zugriff auf die Kamera an
-    await webcam.play();
-    
-    // Fügt die Elemente zur Seite hinzu
-    const webcamContainer = document.getElementById("webcam-container");
-    webcamContainer.innerHTML = '';
-    webcamContainer.appendChild(webcam.canvas);
+    // Richte die Webcam mit der aktuellen Kamera-Vorgabe ein
+    try {
+        await setupWebcam();
+    } catch (error) {
+        console.error("Fehler beim Zugriff auf die Kamera.", error);
+        alert("Kamera konnte nicht gestartet werden. Bitte erlaube den Kamerazugriff im Browser.");
+        return;
+    }
 
     resultDisplay = document.getElementById("prediction-display");
     if (resultDisplay) {
@@ -231,6 +243,60 @@ async function init(modelBaseURL) {
     
     // Startet die Klassifizierungsschleife
     window.requestAnimationFrame(loop); 
+}
+
+async function setupWebcam() {
+    const useFrontCamera = currentFacingMode !== 'environment';
+    const flip = useFrontCamera; // Spiegelung nur für die Selfie-Kamera aktiv
+
+    if (webcam) {
+        webcam.stop();
+    }
+
+    const nextWebcam = new tmImage.Webcam(320, 320, flip);
+    try {
+        await nextWebcam.setup({ facingMode: currentFacingMode });
+        await nextWebcam.play();
+    } catch (error) {
+        nextWebcam.stop();
+        throw error;
+    }
+
+    const webcamContainer = document.getElementById("webcam-container");
+    if (webcamContainer) {
+        webcamContainer.innerHTML = '';
+        webcamContainer.appendChild(nextWebcam.canvas);
+    }
+
+    webcam = nextWebcam;
+}
+
+async function toggleCamera() {
+    if (isCameraSwitchInProgress || appState !== APP_STATES.MAIN) {
+        return;
+    }
+
+    const previousMode = currentFacingMode;
+    currentFacingMode = currentFacingMode === "user" ? "environment" : "user";
+    updateCameraToggleButton();
+
+    isCameraSwitchInProgress = true;
+    try {
+        await setupWebcam();
+    } catch (error) {
+        console.error("Kamerawechsel fehlgeschlagen.", error);
+        alert("Kamerawechsel nicht möglich. Bitte erlaube den Zugriff auf die ausgewählte Kamera.");
+        currentFacingMode = previousMode;
+        updateCameraToggleButton();
+        // Versuch, zur vorherigen Kamera zurückzukehren.
+        try {
+            await setupWebcam();
+        } catch (retryError) {
+            console.error("Rückwechsel zur vorherigen Kamera fehlgeschlagen.", retryError);
+        }
+    } finally {
+        isCameraSwitchInProgress = false;
+    }
 }
 
 
@@ -286,3 +352,5 @@ async function predict() {
         lastSentLabel = currentLabel;
     }
 }
+
+updateCameraToggleButton();
