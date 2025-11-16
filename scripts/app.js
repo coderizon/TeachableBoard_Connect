@@ -5,8 +5,23 @@
 let model, webcam, resultDisplay, maxPredictions; 
 let lastSentLabel = null; // Für die Micro:bit-Kommunikation (Sendefrequenz-Kontrolle)
 let isBluetoothConnected = false;
-const DEFAULT_MODEL_URL = "https://teachablemachine.withgoogle.com/models/7NtSo3_fL/";
-let currentModelUrl = DEFAULT_MODEL_URL;
+
+const MODEL_TYPES = {
+    IMAGE: "image",
+    AUDIO: "audio"
+};
+
+const DEFAULT_MODEL_URLS = {
+    [MODEL_TYPES.IMAGE]: "https://teachablemachine.withgoogle.com/models/7NtSo3_fL/",
+    [MODEL_TYPES.AUDIO]: "https://teachablemachine.withgoogle.com/models/WiTNHg8HJ/"
+};
+
+let modelUrlByType = { ...DEFAULT_MODEL_URLS };
+let currentModelType = null;
+let currentModelUrl = DEFAULT_MODEL_URLS[MODEL_TYPES.IMAGE];
+let audioRecognizer = null;
+let audioScoreElements = [];
+let audioLabels = [];
 let currentFacingMode = "user"; // 'user' = Selfie-Kamera, 'environment' = Rückkamera
 let isCameraSwitchInProgress = false;
 
@@ -30,17 +45,58 @@ function checkLogoClick(event) {
         
         // Überprüft, ob das geklickte Element das Logo selbst ist
         if (event.target === logo) {
-            openModelUrlDialog();
+            openModelTypeDialog();
         }
     }
 }
 
+function openModelTypeDialog() {
+    appState = APP_STATES.DIALOG;
+    const typeDialog = document.getElementById('model-type-dialog');
+    const urlDialog = document.getElementById('model-url-dialog');
+    if (urlDialog) {
+        urlDialog.classList.add('hidden');
+    }
+    if (typeDialog) {
+        typeDialog.classList.remove('hidden');
+    }
+}
+
+function cancelModelTypeDialog() {
+    appState = APP_STATES.LANDING;
+    const typeDialog = document.getElementById('model-type-dialog');
+    if (typeDialog) {
+        typeDialog.classList.add('hidden');
+    }
+    currentModelType = null;
+}
+
+function chooseModelType(type) {
+    const availableTypes = Object.values(MODEL_TYPES);
+    if (!availableTypes.includes(type)) {
+        console.warn(`Unbekannter Modelltyp: ${type}`);
+        return;
+    }
+    currentModelType = type;
+    currentModelUrl = modelUrlByType[currentModelType] || '';
+    const typeDialog = document.getElementById('model-type-dialog');
+    if (typeDialog) {
+        typeDialog.classList.add('hidden');
+    }
+    openModelUrlDialog();
+}
+
 function openModelUrlDialog() {
+    if (!currentModelType) {
+        openModelTypeDialog();
+        return;
+    }
+
     appState = APP_STATES.DIALOG;
     const dialog = document.getElementById('model-url-dialog');
     const input = document.getElementById('dialog-url-input');
     const error = document.getElementById('dialog-error');
-    const presetValue = currentModelUrl || '';
+    const presetValue = modelUrlByType[currentModelType] || '';
 
     error.classList.add('hidden');
     dialog.classList.remove('hidden');
@@ -55,13 +111,28 @@ function openModelUrlDialog() {
 
 function cancelModelUrlDialog() {
     appState = APP_STATES.LANDING;
-    document.getElementById('model-url-dialog').classList.add('hidden');
+    const dialog = document.getElementById('model-url-dialog');
+    if (dialog) {
+        dialog.classList.add('hidden');
+    }
+    const typeDialog = document.getElementById('model-type-dialog');
+    if (typeDialog) {
+        typeDialog.classList.add('hidden');
+    }
+    currentModelType = null;
 }
 
 function confirmModelUrl() {
     const dialogInput = document.getElementById('dialog-url-input');
     const dialogError = document.getElementById('dialog-error');
     const urlValue = dialogInput.value.trim();
+
+    if (!currentModelType) {
+        dialogError.textContent = "Bitte wähle zuerst, ob du ein Bild- oder Audiomodell verwenden möchtest.";
+        dialogError.classList.remove('hidden');
+        openModelTypeDialog();
+        return;
+    }
 
     if (!urlValue || !urlValue.startsWith("http")) {
         dialogError.textContent = "Bitte gib einen gültigen Link ein, der mit 'http' beginnt.";
@@ -71,8 +142,16 @@ function confirmModelUrl() {
     }
 
     dialogError.classList.add('hidden');
-    document.getElementById('model-url-dialog').classList.add('hidden');
+    const dialog = document.getElementById('model-url-dialog');
+    if (dialog) {
+        dialog.classList.add('hidden');
+    }
+    const typeDialog = document.getElementById('model-type-dialog');
+    if (typeDialog) {
+        typeDialog.classList.add('hidden');
+    }
 
+    modelUrlByType[currentModelType] = urlValue;
     currentModelUrl = urlValue;
 
     transitionToMainApp();
@@ -159,6 +238,28 @@ function updateCameraToggleButton() {
     button.setAttribute('title', label);
     button.classList.toggle('is-back-camera', !isFrontCamera);
 }
+
+function updateUiForModelType() {
+    const usesCamera = !currentModelType || currentModelType === MODEL_TYPES.IMAGE;
+    const webcamContainer = document.getElementById('webcam-container');
+    const audioPlaceholder = document.getElementById('audio-placeholder');
+    const labelContainer = document.getElementById('label-container');
+    const cameraToggle = document.getElementById('camera-toggle');
+
+    if (webcamContainer) {
+        webcamContainer.classList.toggle('hidden', !usesCamera);
+    }
+    if (audioPlaceholder) {
+        audioPlaceholder.classList.toggle('hidden', usesCamera);
+    }
+    if (labelContainer) {
+        const hasRows = labelContainer.children.length > 0;
+        labelContainer.classList.toggle('hidden', usesCamera || !hasRows);
+    }
+    if (cameraToggle) {
+        cameraToggle.classList.toggle('hidden', !usesCamera);
+    }
+}
 // Führt den Übergang von der Landing Page zur Hauptanwendung durch
 function transitionToMainApp() {
     // 1. App-Zustand umschalten
@@ -170,6 +271,7 @@ function transitionToMainApp() {
     // 3. Hauptanwendung anzeigen (entfernt die CSS-Klasse 'hidden')
     document.getElementById('main-app').classList.remove('hidden');
 
+    updateUiForModelType();
     console.log('🔄 Wechsel zur Hauptanwendung: KI und Bluetooth bereit.');
 }
 
@@ -180,6 +282,11 @@ function transitionToMainApp() {
 
 // Wird nach bestätigter Modell-URL (oder bei einem Neustart) aufgerufen
 async function startClassification() {
+    if (!currentModelType) {
+        updateStatus("Bitte wähle zuerst einen Modelltyp.");
+        return;
+    }
+
     const userURL = currentModelUrl;
     
     if (!userURL || !userURL.startsWith("http")) {
@@ -189,36 +296,69 @@ async function startClassification() {
 
     updateStatus("");
 
-    // Lösche alte Webcam und Labels, falls vorhanden (wichtig bei Neustart)
-    if (webcam) {
-        webcam.stop();
-        document.getElementById("webcam-container").innerHTML = '';
-        webcam = null;
-    }
+    stopImageClassifier();
+    await stopAudioClassifier();
     currentFacingMode = "user";
     updateCameraToggleButton();
+    updateUiForModelType();
 
     resultDisplay = document.getElementById("prediction-display");
     if (resultDisplay) {
         resultDisplay.textContent = "…";
+        resultDisplay.classList.remove('hidden');
     }
 
     model = null;
     maxPredictions = 0;
     lastSentLabel = null;
 
-    await init(userURL);
-    if (!model) {
-        updateStatus("Ladefehler!");
+    let startedSuccessfully = false;
+    if (currentModelType === MODEL_TYPES.IMAGE) {
+        startedSuccessfully = await initImageModel(userURL);
+    } else if (currentModelType === MODEL_TYPES.AUDIO) {
+        startedSuccessfully = await startAudioClassification(userURL);
+    }
+
+    if (!startedSuccessfully) {
         if (resultDisplay) {
             resultDisplay.textContent = "—";
         }
-        return;
+        updateStatus("Ladefehler!");
     }
 }
 
+function stopImageClassifier() {
+    if (webcam) {
+        webcam.stop();
+        const container = document.getElementById("webcam-container");
+        if (container) {
+            container.innerHTML = '';
+        }
+        webcam = null;
+    }
+}
+
+async function stopAudioClassifier() {
+    if (audioRecognizer && typeof audioRecognizer.stopListening === 'function') {
+        try {
+            await audioRecognizer.stopListening();
+        } catch (error) {
+            console.warn("Audio Listener konnte nicht beendet werden.", error);
+        }
+    }
+    audioRecognizer = null;
+    audioLabels = [];
+    audioScoreElements = [];
+    const labelContainer = document.getElementById('label-container');
+    if (labelContainer) {
+        labelContainer.innerHTML = '';
+        labelContainer.classList.add('hidden');
+    }
+    updateUiForModelType();
+}
+
 // Lädt das Modell und richtet die Webcam ein
-async function init(modelBaseURL) {
+async function initImageModel(modelBaseURL) {
     const modelURL = modelBaseURL + "model.json";
     const metadataURL = modelBaseURL + "metadata.json";
 
@@ -230,7 +370,7 @@ async function init(modelBaseURL) {
         console.error("Fehler beim Laden des Modells. Ist der Link korrekt freigegeben?", error);
         alert("Fehler beim Laden des Modells. Prüfen Sie den Link und die Browser-Konsole.");
         updateStatus("Ladefehler!");
-        return;
+        return false;
     }
     
     // Richte die Webcam mit der aktuellen Kamera-Vorgabe ein
@@ -239,7 +379,7 @@ async function init(modelBaseURL) {
     } catch (error) {
         console.error("Fehler beim Zugriff auf die Kamera.", error);
         alert("Kamera konnte nicht gestartet werden. Bitte erlaube den Kamerazugriff im Browser.");
-        return;
+        return false;
     }
 
     resultDisplay = document.getElementById("prediction-display");
@@ -250,6 +390,7 @@ async function init(modelBaseURL) {
     
     // Startet die Klassifizierungsschleife
     window.requestAnimationFrame(loop); 
+    return true;
 }
 
 async function setupWebcam() {
@@ -279,6 +420,9 @@ async function setupWebcam() {
 }
 
 async function toggleCamera() {
+    if (currentModelType !== MODEL_TYPES.IMAGE) {
+        return;
+    }
     if (isCameraSwitchInProgress || appState !== APP_STATES.MAIN) {
         return;
     }
@@ -313,11 +457,139 @@ async function toggleCamera() {
 
 // Die Hauptschleife für die kontinuierliche Klassifizierung
 async function loop() {
-    if (webcam && model) {
+    if (webcam && model && currentModelType === MODEL_TYPES.IMAGE) {
         webcam.update(); 
         await predict(); 
     }
     window.requestAnimationFrame(loop); 
+}
+
+async function startAudioClassification(modelBaseURL) {
+    try {
+        audioRecognizer = await createAudioRecognizer(modelBaseURL);
+    } catch (error) {
+        console.error("Fehler beim Laden des Audiomodells.", error);
+        alert("Audio-Modell konnte nicht geladen werden. Prüfe den Link und die Browser-Konsole.");
+        return false;
+    }
+
+    audioLabels = audioRecognizer.wordLabels() || [];
+    setupLabelContainer(audioLabels);
+    updateUiForModelType();
+
+    const listenConfig = {
+        includeSpectrogram: true,
+        probabilityThreshold: 0.75,
+        invokeCallbackOnNoiseAndUnknown: true,
+        overlapFactor: 0.5
+    };
+
+    const handleResult = (result) => {
+        if (!result) {
+            return;
+        }
+        const scores = result.scores || [];
+        updateLabelScores(scores);
+
+        let highestProbability = -1;
+        let currentLabel = null;
+        for (let i = 0; i < scores.length; i++) {
+            const score = scores[i];
+            if (score > highestProbability) {
+                highestProbability = score;
+                currentLabel = audioLabels[i] || null;
+            }
+        }
+
+        if (resultDisplay) {
+            resultDisplay.textContent = currentLabel || "—";
+        }
+        broadcastLabel(currentLabel);
+    };
+
+    try {
+        const listenPromise = audioRecognizer.listen(handleResult, listenConfig);
+        if (listenPromise && typeof listenPromise.catch === 'function') {
+            listenPromise.catch(async (error) => {
+                handleAudioListenError(error);
+                await stopAudioClassifier();
+            });
+        }
+    } catch (error) {
+        handleAudioListenError(error);
+        await stopAudioClassifier();
+        return false;
+    }
+
+    return true;
+}
+
+async function createAudioRecognizer(modelBaseURL) {
+    if (typeof speechCommands === "undefined") {
+        throw new Error("speechCommands Bibliothek wurde nicht geladen.");
+    }
+
+    const checkpointURL = modelBaseURL + "model.json";
+    const metadataURL = modelBaseURL + "metadata.json";
+
+    const recognizer = speechCommands.create(
+        "BROWSER_FFT",
+        undefined,
+        checkpointURL,
+        metadataURL
+    );
+
+    await recognizer.ensureModelLoaded();
+    return recognizer;
+}
+
+function setupLabelContainer(labels) {
+    const container = document.getElementById('label-container');
+    if (!container) return;
+    container.innerHTML = '';
+    audioScoreElements = [];
+
+    labels.forEach((label) => {
+        const row = document.createElement('div');
+        row.className = 'label-row';
+
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = label;
+        const scoreSpan = document.createElement('span');
+        scoreSpan.className = 'label-score';
+        scoreSpan.textContent = '0.00';
+
+        row.appendChild(nameSpan);
+        row.appendChild(scoreSpan);
+        container.appendChild(row);
+
+        audioScoreElements.push(scoreSpan);
+    });
+
+    if (labels.length === 0) {
+        const emptyRow = document.createElement('div');
+        emptyRow.className = 'label-row';
+        emptyRow.textContent = "Keine Klassen gefunden.";
+        container.appendChild(emptyRow);
+    }
+
+    updateUiForModelType();
+}
+
+function updateLabelScores(scores) {
+    if (!audioScoreElements.length) return;
+    for (let i = 0; i < audioScoreElements.length; i++) {
+        const scoreSpan = audioScoreElements[i];
+        if (!scoreSpan) continue;
+        const scoreValue = typeof scores[i] === 'number' ? scores[i] : 0;
+        scoreSpan.textContent = scoreValue.toFixed(2);
+    }
+}
+
+function handleAudioListenError(error) {
+    console.error("Fehler beim Starten des Mikrofons.", error);
+    updateStatus("Mikrofonfehler – bitte Zugriff erlauben?");
+    alert("Mikrofon konnte nicht gestartet werden. Bitte erlaube den Zugriff in deinem Browser.");
 }
 
 // Führt die Klassifizierung durch und sendet das Ergebnis an das Micro:bit
@@ -343,25 +615,27 @@ async function predict() {
         resultDisplay.textContent = currentLabel || "—";
     }
     
-    // Senden nur bei Label-Wechsel
-    // sendToMicrobit ist in der connection.js definiert!
-    // sendToCalliope ist in der calliopeConnection.js definiert!
-    if (currentLabel !== lastSentLabel && currentLabel !== null) {
-        // Prüfen, ob die Funktionen zum Senden existieren, bevor sie aufgerufen werden
-        if (typeof sendToMicrobit === 'function') {
-            sendToMicrobit(currentLabel);
-            console.log(`Neues Label an Micro:bit gesendet: ${currentLabel}`);
-        }
-        if (typeof sendToCalliope === 'function') {
-            sendToCalliope(currentLabel);
-            console.log(`Neues Label an Calliope mini gesendet: ${currentLabel}`);
-        }
-        if (typeof sendToArduino === 'function') {
-            sendToArduino(currentLabel);
-            console.log(`Neues Label an Arduino UNO R4 gesendet: ${currentLabel}`);
-        }
-        lastSentLabel = currentLabel;
+    broadcastLabel(currentLabel);
+}
+
+function broadcastLabel(currentLabel) {
+    if (currentLabel === null || currentLabel === lastSentLabel) {
+        return;
     }
+
+    if (typeof sendToMicrobit === 'function') {
+        sendToMicrobit(currentLabel);
+        console.log(`Neues Label an Micro:bit gesendet: ${currentLabel}`);
+    }
+    if (typeof sendToCalliope === 'function') {
+        sendToCalliope(currentLabel);
+        console.log(`Neues Label an Calliope mini gesendet: ${currentLabel}`);
+    }
+    if (typeof sendToArduino === 'function') {
+        sendToArduino(currentLabel);
+        console.log(`Neues Label an Arduino UNO R4 gesendet: ${currentLabel}`);
+    }
+    lastSentLabel = currentLabel;
 }
 
 updateCameraToggleButton();

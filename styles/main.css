@@ -79,7 +79,8 @@ background-repeat: repeat;
 /* MODELL-URL DIALOG */
 /* -------------------------------------- */
 
-#model-url-dialog {
+#model-url-dialog,
+#model-type-dialog {
     position: fixed;
     top: 0;
     left: 0;
@@ -92,7 +93,8 @@ background-repeat: repeat;
     z-index: 20;
 }
 
-#model-url-dialog .dialog-content {
+#model-url-dialog .dialog-content,
+#model-type-dialog .dialog-content {
     background: #fcf6f5;
     border-radius: 20px;
     padding: 32px 36px;
@@ -163,6 +165,45 @@ background-repeat: repeat;
 .dialog-button:hover {
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.model-type-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin: 20px 0;
+}
+
+.model-type-card {
+    border: none;
+    border-radius: 18px;
+    padding: 18px 20px;
+    text-align: left;
+    background: #fff5e6;
+    color: #4a2c18;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.2s ease;
+}
+
+.model-type-card:hover,
+.model-type-card:focus-visible {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.1);
+    background: #ffe6c4;
+    outline: none;
+}
+
+.model-type-title {
+    display: block;
+    font-size: 1.2em;
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.model-type-subtitle {
+    display: block;
+    font-size: 0.9em;
+    color: #6d4c41;
 }
 
 
@@ -343,6 +384,43 @@ background-repeat: repeat;
     font-weight: 700;
     color: #1f4b99;
     box-shadow: 0 15px 36px rgba(0, 0, 0, 0.18);
+}
+
+.audio-placeholder {
+    width: 100%;
+    max-width: 360px;
+    padding: 20px 24px;
+    border-radius: 24px;
+    background: #fff4c4;
+    color: #6d4c41;
+    font-weight: 600;
+    box-shadow: 0 15px 36px rgba(0, 0, 0, 0.12);
+}
+
+.label-container {
+    width: 100%;
+    max-width: 360px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.95);
+    color: #4a2c18;
+    font-weight: 600;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+.label-row .label-score {
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    color: #1f4b99;
 }
 
 @media (max-width: 600px) {

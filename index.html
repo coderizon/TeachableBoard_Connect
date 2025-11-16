@@ -14,6 +14,23 @@
         <p id="landing-message">Klicke auf das Logo, um die App zu starten</p>
     </div>
 
+    <div id="model-type-dialog" class="hidden">
+        <div class="dialog-content">
+            <p class="dialog-title">Was möchtest du erkennen?</p>
+            <div class="model-type-grid">
+                <button type="button" class="model-type-card" onclick="chooseModelType('image')">
+                    <span class="model-type-title">Bildmodell</span>
+                    <span class="model-type-subtitle">Nutze deine Kamera für Teachable Machine Image Modelle.</span>
+                </button>
+                <button type="button" class="model-type-card" onclick="chooseModelType('audio')">
+                    <span class="model-type-title">Audiomodell</span>
+                    <span class="model-type-subtitle">Erkenne Geräusche oder Sprachkommandos aus Teachable Machine.</span>
+                </button>
+            </div>
+            <button type="button" class="dialog-button secondary" onclick="cancelModelTypeDialog()">Abbrechen</button>
+        </div>
+    </div>
+
     <div id="model-url-dialog" class="hidden">
         <div class="dialog-content">
             <p class="dialog-title">Please paste the full Teachable Machine model URL:</p>
@@ -47,7 +64,11 @@
 
             <div class="main-stage">
                 <div id="webcam-container" class="webcam-frame"></div>
+                <div id="audio-placeholder" class="audio-placeholder hidden">
+                    <p>Audiomodell aktiv · Dein Mikrofon reagiert auf Geräusche.</p>
+                </div>
                 <div id="prediction-display" class="prediction-pill hidden">—</div>
+                <div id="label-container" class="label-container hidden"></div>
             </div>
         </div>
 
@@ -64,6 +85,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/speech-commands@latest/dist/speech-commands.min.js"></script>
     
     <script src="scripts/bluetooth/microbit.js"></script> 
     <script src="scripts/bluetooth/calliope.js"></script> 
