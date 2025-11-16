@@ -127,6 +127,13 @@ function selectCalliope() {
     }
 }
 
+function selectArduino() {
+    closeBluetoothPopover();
+    if (typeof connectArduino === 'function') {
+        connectArduino();
+    }
+}
+
 function updateStatus(message) {
     const statusDiv = document.getElementById("status-message");
     if (statusDiv) {
@@ -348,6 +355,10 @@ async function predict() {
         if (typeof sendToCalliope === 'function') {
             sendToCalliope(currentLabel);
             console.log(`Neues Label an Calliope mini gesendet: ${currentLabel}`);
+        }
+        if (typeof sendToArduino === 'function') {
+            sendToArduino(currentLabel);
+            console.log(`Neues Label an Arduino UNO R4 gesendet: ${currentLabel}`);
         }
         lastSentLabel = currentLabel;
     }
