@@ -22,6 +22,8 @@ let currentModelUrl = DEFAULT_MODEL_URLS[MODEL_TYPES.IMAGE];
 let audioRecognizer = null;
 let audioLabels = [];
 let audioWave = null;
+const AUDIO_WAVE_SILENCE_THRESHOLD = 0.15;
+const AUDIO_WAVE_IDLE_AMPLITUDE = 0.4;
 let currentFacingMode = "user"; // 'user' = Selfie-Kamera, 'environment' = Rückkamera
 let isCameraSwitchInProgress = false;
 
@@ -252,7 +254,7 @@ function updateUiForModelType() {
         audioPlaceholder.classList.toggle('hidden', usesCamera);
         if (!usesCamera && !audioWave) {
             initAudioWave();
-            updateAudioWave(0.1);
+            updateAudioWave(0);
         }
     }
     if (cameraToggle) {
@@ -469,7 +471,7 @@ async function startAudioClassification(modelBaseURL) {
 
     audioLabels = audioRecognizer.wordLabels() || [];
     updateUiForModelType();
-    updateAudioWave(0.1);
+    updateAudioWave(0);
 
     const listenConfig = {
         includeSpectrogram: true,
@@ -576,7 +578,12 @@ function updateAudioWave(level = 0) {
         return;
     }
     const clamped = Math.min(Math.max(level, 0), 1);
-    const amplitude = 0.2 + clamped * 3.8;
+    let amplitude = AUDIO_WAVE_IDLE_AMPLITUDE;
+    if (clamped >= AUDIO_WAVE_SILENCE_THRESHOLD) {
+        const range = 1 - AUDIO_WAVE_SILENCE_THRESHOLD;
+        const normalized = range > 0 ? (clamped - AUDIO_WAVE_SILENCE_THRESHOLD) / range : 0;
+        amplitude = AUDIO_WAVE_IDLE_AMPLITUDE + normalized * 3.2;
+    }
     audioWave.setAmplitude(amplitude);
 }
 
