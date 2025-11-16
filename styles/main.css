@@ -389,38 +389,18 @@ background-repeat: repeat;
 .audio-placeholder {
     width: 100%;
     max-width: 360px;
-    padding: 20px 24px;
-    border-radius: 24px;
-    background: #fff4c4;
-    color: #6d4c41;
-    font-weight: 600;
-    box-shadow: 0 15px 36px rgba(0, 0, 0, 0.12);
-}
-
-.label-container {
-    width: 100%;
-    max-width: 360px;
+    padding: 18px 24px;
+    border-radius: 30px;
+    background: linear-gradient(145deg, #ffe9b0, #ffd67a);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
     display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.label-row {
-    display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
-    padding: 10px 14px;
-    border-radius: 18px;
-    background: rgba(255, 255, 255, 0.95);
-    color: #4a2c18;
-    font-weight: 600;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
 }
 
-.label-row .label-score {
-    font-variant-numeric: tabular-nums;
-    font-weight: 700;
-    color: #1f4b99;
+.audio-wave-container {
+    width: 100%;
+    height: 130px;
 }
 
 @media (max-width: 600px) {

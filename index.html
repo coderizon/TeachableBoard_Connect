@@ -65,10 +65,9 @@
             <div class="main-stage">
                 <div id="webcam-container" class="webcam-frame"></div>
                 <div id="audio-placeholder" class="audio-placeholder hidden">
-                    <p>Audiomodell aktiv · Dein Mikrofon reagiert auf Geräusche.</p>
+                    <div id="audio-wave-container" class="audio-wave-container"></div>
                 </div>
                 <div id="prediction-display" class="prediction-pill hidden">—</div>
-                <div id="label-container" class="label-container hidden"></div>
             </div>
         </div>
 
@@ -86,6 +85,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/speech-commands@latest/dist/speech-commands.min.js"></script>
+    <script src="https://unpkg.com/siriwave/dist/siriwave.umd.min.js"></script>
     
     <script src="scripts/bluetooth/microbit.js"></script> 
     <script src="scripts/bluetooth/calliope.js"></script> 

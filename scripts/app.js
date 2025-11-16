@@ -20,8 +20,8 @@ let modelUrlByType = { ...DEFAULT_MODEL_URLS };
 let currentModelType = null;
 let currentModelUrl = DEFAULT_MODEL_URLS[MODEL_TYPES.IMAGE];
 let audioRecognizer = null;
-let audioScoreElements = [];
 let audioLabels = [];
+let audioWave = null;
 let currentFacingMode = "user"; // 'user' = Selfie-Kamera, 'environment' = Rückkamera
 let isCameraSwitchInProgress = false;
 
@@ -243,7 +243,6 @@ function updateUiForModelType() {
     const usesCamera = !currentModelType || currentModelType === MODEL_TYPES.IMAGE;
     const webcamContainer = document.getElementById('webcam-container');
     const audioPlaceholder = document.getElementById('audio-placeholder');
-    const labelContainer = document.getElementById('label-container');
     const cameraToggle = document.getElementById('camera-toggle');
 
     if (webcamContainer) {
@@ -251,10 +250,10 @@ function updateUiForModelType() {
     }
     if (audioPlaceholder) {
         audioPlaceholder.classList.toggle('hidden', usesCamera);
-    }
-    if (labelContainer) {
-        const hasRows = labelContainer.children.length > 0;
-        labelContainer.classList.toggle('hidden', usesCamera || !hasRows);
+        if (!usesCamera && !audioWave) {
+            initAudioWave();
+            updateAudioWave(0.1);
+        }
     }
     if (cameraToggle) {
         cameraToggle.classList.toggle('hidden', !usesCamera);
@@ -348,12 +347,7 @@ async function stopAudioClassifier() {
     }
     audioRecognizer = null;
     audioLabels = [];
-    audioScoreElements = [];
-    const labelContainer = document.getElementById('label-container');
-    if (labelContainer) {
-        labelContainer.innerHTML = '';
-        labelContainer.classList.add('hidden');
-    }
+    updateAudioWave(0);
     updateUiForModelType();
 }
 
@@ -474,8 +468,8 @@ async function startAudioClassification(modelBaseURL) {
     }
 
     audioLabels = audioRecognizer.wordLabels() || [];
-    setupLabelContainer(audioLabels);
     updateUiForModelType();
+    updateAudioWave(0.1);
 
     const listenConfig = {
         includeSpectrogram: true,
@@ -489,7 +483,6 @@ async function startAudioClassification(modelBaseURL) {
             return;
         }
         const scores = result.scores || [];
-        updateLabelScores(scores);
 
         let highestProbability = -1;
         let currentLabel = null;
@@ -500,6 +493,8 @@ async function startAudioClassification(modelBaseURL) {
                 currentLabel = audioLabels[i] || null;
             }
         }
+
+        updateAudioWave(highestProbability > 0 ? highestProbability : 0);
 
         if (resultDisplay) {
             resultDisplay.textContent = currentLabel || "—";
@@ -543,47 +538,46 @@ async function createAudioRecognizer(modelBaseURL) {
     return recognizer;
 }
 
-function setupLabelContainer(labels) {
-    const container = document.getElementById('label-container');
-    if (!container) return;
-    container.innerHTML = '';
-    audioScoreElements = [];
-
-    labels.forEach((label) => {
-        const row = document.createElement('div');
-        row.className = 'label-row';
-
-        const nameSpan = document.createElement('span');
-        nameSpan.textContent = label;
-        const scoreSpan = document.createElement('span');
-        scoreSpan.className = 'label-score';
-        scoreSpan.textContent = '0.00';
-
-        row.appendChild(nameSpan);
-        row.appendChild(scoreSpan);
-        container.appendChild(row);
-
-        audioScoreElements.push(scoreSpan);
-    });
-
-    if (labels.length === 0) {
-        const emptyRow = document.createElement('div');
-        emptyRow.className = 'label-row';
-        emptyRow.textContent = "Keine Klassen gefunden.";
-        container.appendChild(emptyRow);
+function initAudioWave() {
+    if (typeof SiriWave === "undefined") {
+        console.warn("SiriWave Bibliothek wurde nicht geladen.");
+        audioWave = null;
+        return;
     }
 
-    updateUiForModelType();
+    const container = document.getElementById('audio-wave-container');
+    if (!container) {
+        audioWave = null;
+        return;
+    }
+
+    if (audioWave && typeof audioWave.dispose === 'function') {
+        audioWave.dispose();
+    }
+
+    try {
+        audioWave = new SiriWave({
+            container,
+            width: container.clientWidth || 320,
+            height: 120,
+            style: 'ios9',
+            autostart: true,
+            speed: 0.12,
+            amplitude: 0
+        });
+    } catch (error) {
+        console.error("SiriWave konnte nicht initialisiert werden.", error);
+        audioWave = null;
+    }
 }
 
-function updateLabelScores(scores) {
-    if (!audioScoreElements.length) return;
-    for (let i = 0; i < audioScoreElements.length; i++) {
-        const scoreSpan = audioScoreElements[i];
-        if (!scoreSpan) continue;
-        const scoreValue = typeof scores[i] === 'number' ? scores[i] : 0;
-        scoreSpan.textContent = scoreValue.toFixed(2);
+function updateAudioWave(level = 0) {
+    if (!audioWave || typeof audioWave.setAmplitude !== 'function') {
+        return;
     }
+    const clamped = Math.min(Math.max(level, 0), 1);
+    const amplitude = 0.2 + clamped * 3.8;
+    audioWave.setAmplitude(amplitude);
 }
 
 function handleAudioListenError(error) {
@@ -638,4 +632,6 @@ function broadcastLabel(currentLabel) {
     lastSentLabel = currentLabel;
 }
 
+initAudioWave();
+updateAudioWave(0);
 updateCameraToggleButton();
